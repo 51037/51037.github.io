@@ -39,7 +39,7 @@ var point_dist = function(a, b, c, d)
 var getRandomTwinkle = function(p)
 {
   var variance = p.variance * (0.5 + (Math.random() / 2.0));
-  var alpha = Math.min(p.brightness - variance, p.max_brightness);
+  var alpha = Math.min(p.brightness + variance, p.max_brightness);
   return alpha.toString();
 }
 
@@ -88,8 +88,8 @@ var initializeField = function()
     const yvel = Math.random() * 2 * max_speed - max_speed;
     const size = Math.pow(Math.random(), 2) * max_size + 0.1;
     const max_bright = 0.75 + (Math.random() / 4.0); // (0.75 - 1.0)
-    const variance = (Math.random() / 10.0); // (0 - 0.1)
-    const brightness = max_bright - (Math.random() * variance);
+    const variance = (Math.random() / 5.0) - 0.1; // (-0.1 - 0.1)
+    const brightness = Math.min(max_bright + variance, 1.0);
     const p = {x: x, y: y, xvel: xvel, yvel: yvel, size: size, brightness: brightness, max_brightness: max_bright, variance: variance};
     particles[i] = p;
   }
@@ -109,8 +109,8 @@ var initializePassiveField = function()
     const yvel = Math.random() * 2 * max_speed - max_speed;
     const size = Math.pow(Math.random(), 2) * max_size + 0.1;
     const max_bright = 0.7 + (Math.random() / 4.0); // (0.7 - 0.95)
-    const variance = (Math.random() / 10.0); // (0 - 0.1)
-    const brightness = max_bright - (Math.random() * variance);
+    const variance = (Math.random() / 5.0) - 0.1; // (-0.1 - 0.1)
+    const brightness = Math.min(max_bright + variance, 1.0);
     const p = {x: x, y: y, xvel: xvel, yvel: yvel, size: size, brightness: brightness, max_brightness: max_bright, variance: variance};
     passive_particles[i] = p;
   }
