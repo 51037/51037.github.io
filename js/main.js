@@ -135,31 +135,37 @@ function _frame(ts) {
   if (dt > 0) fps = fps * 0.95 + (1000 / dt) * 0.05;
   lastTime = ts;
 
-  // Global time scale: the sim sees a stretched/compressed dt, the loop does not.
-  const sdt = Math.max(0, dt) * cfg.sim.speed;
-  SIM += sdt;
+  try {
+    // Global time scale: the sim sees a stretched/compressed dt, the loop does not.
+    const sdt = Math.max(0, dt) * cfg.sim.speed;
+    SIM += sdt;
 
-  // Idle mouse bleeds off its reveal energy (real time, independent of sim speed).
-  mouseEnergy = Math.max(0, mouseEnergy - cfg.mouse.energyDecay * dt / 1000);
+    // Idle mouse bleeds off its reveal energy (real time, independent of sim speed).
+    mouseEnergy = Math.max(0, mouseEnergy - cfg.mouse.energyDecay * dt / 1000);
 
-  // Flow field steers velocity before the sim relaxes energy + moves particles.
-  updateClouds(sdt, cfg);
-  applyFlowField(particles, sdt, cfg);
-  applyFlowField(passiveParticles, sdt, cfg);
+    // Flow field steers velocity before the sim relaxes energy + moves particles.
+    updateClouds(sdt, cfg);
+    applyFlowField(particles, sdt, cfg);
+    applyFlowField(passiveParticles, sdt, cfg);
 
-  updateSim(W, H, cfg, sdt);
-  updateRipples();
-  updateLightning(sdt, cfg);
+    updateSim(W, H, cfg, sdt);
+    updateRipples();
+    updateLightning(sdt, cfg);
 
-  renderBackground(ctx, W, H);
-  if (cfg.passive.enabled) renderPassiveField(ctx, passiveParticles, cfg.particles.twinkle);
-  renderActiveField(ctx, particles, nodes, cfg, mouseX, mouseY, mouseEnergy);
-  renderRipples(ctx);
-  renderLightning(ctx, cfg);
-  renderDebug(ctx, cfg, fps);
+    renderBackground(ctx, W, H);
+    if (cfg.passive.enabled) renderPassiveField(ctx, passiveParticles, cfg.particles.twinkle);
+    renderActiveField(ctx, particles, nodes, cfg, mouseX, mouseY, mouseEnergy);
+    renderRipples(ctx);
+    renderLightning(ctx, cfg);
+    renderDebug(ctx, cfg, fps);
+  } catch (err) {
+    // Never let one bad frame kill the loop; log once.
+    if (!_frameErrLogged) { console.error('frame error:', err); _frameErrLogged = true; }
+  }
 
   requestAnimationFrame(_frame);
 }
+let _frameErrLogged = false;
 
 function _toast(msg) {
   const t = document.createElement('div');

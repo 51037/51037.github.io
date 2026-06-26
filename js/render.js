@@ -11,16 +11,19 @@ function _lifeAlpha(p) {
   return 1.0;
 }
 
+// Returns a particle's [r,g,b] (no alpha) for the current colour mode.
+function _pRGB(p, pcfg) {
+  if (pcfg.colorMode === 'white')   return [255, 255, 255];
+  if (pcfg.colorMode === 'palette') return lutColor(p.t != null ? p.t : 0.5);
+  const hue = pcfg.colorMode === 'rainbow' ? p.hue : pcfg.hue;
+  const l   = 50 + p.z * 30; // depth drives lightness: far=50%, near=80%
+  return hslToRgb(hue / 360, pcfg.saturation / 100, l / 100);
+}
+
 // Returns rgba string. For non-rainbow, uses cfg hue so slider updates apply live.
 function _pColor(p, alpha, pcfg) {
   if (pcfg.colorMode === 'white') return `rgba(255,255,255,${alpha.toFixed(3)})`;
-  if (pcfg.colorMode === 'palette') {
-    const [r,g,b] = lutColor(p.t != null ? p.t : 0.5);
-    return `rgba(${r},${g},${b},${alpha.toFixed(3)})`;
-  }
-  const hue = pcfg.colorMode === 'rainbow' ? p.hue : pcfg.hue;
-  const l   = 50 + p.z * 30; // depth drives lightness: far=50%, near=80%
-  const [r, g, b] = hslToRgb(hue / 360, pcfg.saturation / 100, l / 100);
+  const [r, g, b] = _pRGB(p, pcfg);
   return `rgba(${r},${g},${b},${alpha.toFixed(3)})`;
 }
 
@@ -85,10 +88,11 @@ function renderActiveField(ctx, particles, nodes, cfg, mouseX, mouseY, mouseEner
       ctx.lineWidth   = 0.5 + p.z * 0.75;
 
       if (useGrad) {
-        const grad = ctx.createLinearGradient(p.x, p.y, q.x, q.y);
-        grad.addColorStop(0, _pColor(p, connAlpha, pcfg));
-        grad.addColorStop(1, _pColor(q, connAlpha, pcfg));
-        ctx.strokeStyle = grad;
+        // Flat blended colour instead of createLinearGradient — allocating a
+        // gradient per connection every frame pressures WE's Skia/GPU layer.
+        const c1 = _pRGB(p, pcfg), c2 = _pRGB(q, pcfg);
+        const r = (c1[0] + c2[0]) >> 1, g = (c1[1] + c2[1]) >> 1, b = (c1[2] + c2[2]) >> 1;
+        ctx.strokeStyle = `rgba(${r},${g},${b},${connAlpha.toFixed(3)})`;
       } else {
         ctx.strokeStyle = `rgba(255,255,255,${connAlpha.toFixed(3)})`;
       }
