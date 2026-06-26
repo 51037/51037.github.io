@@ -1,18 +1,21 @@
 const DEFAULT_CONFIG = {
+  __v:         2, // config schema version; bump to invalidate cached heavy configs
   sim:         { speed: 0.14605110782519648 }, // global time scale; framerate is unaffected
-  particles:   { count: 800, maxSize: 2.25, maxSpeed: 0.15, colorMode: 'palette', hue: 200, saturation: 100, twinkle: 1.0, palette: 'candy' },
+  // NOTE: counts kept performant for Wallpaper Engine. ~400 particles × 5-closest
+  // gradient connections is roughly the ceiling before WE's render watchdog trips.
+  particles:   { count: 400, maxSize: 2.25, maxSpeed: 0.15, colorMode: 'palette', hue: 200, saturation: 100, twinkle: 1.0, palette: 'candy' },
   passive:     { enabled: true, count: 75,  maxSize: 2.0,  maxSpeed: 0.4 },
-  connections: { enabled: true, maxRadius: 125, nClosest: 12, alphaBias: 0.1, gradient: true },
+  connections: { enabled: true, maxRadius: 125, nClosest: 5, alphaBias: 0.1, gradient: true },
   // Mouse reveal "energy": charges with movement, decays while idle.
   mouse:       { energyGain: 0.005, energyDecay: 0.5 },
-  nodes:       { enabled: true, count: 25,  maxRadius: 250, maxSpeed: 0.1 },
+  nodes:       { enabled: true, count: 12,  maxRadius: 250, maxSpeed: 0.1 },
   depth:       { enabled: true, factor: 0.6 },
   physics:     { enabled: true, drag: 3.45 }, // rate (per sec) velocities relax toward baseline energy
   click:       { impulse: 6.5, rippleRadius: 180, rippleDuration: 800 },
   annihilation:{ enabled: true, radius: 8 },
   lightning: {
     enabled:    true,
-    frequency:  3,     // expected events per second
+    frequency:  1.5,   // expected events per second
     duration:   400,   // ms a bolt stays lit
     radius:     450,   // heavy-node reach; nodes within light up
     branches:   6,     // max nodes a single strike connects to
@@ -43,7 +46,12 @@ const DEFAULT_CONFIG = {
 function loadConfig() {
   try {
     const raw = localStorage.getItem('bgConfig');
-    if (raw) return deepMerge(DEFAULT_CONFIG, JSON.parse(raw));
+    if (raw) {
+      const saved = JSON.parse(raw);
+      // Discard configs from an older schema (e.g. a cached performance-heavy
+      // one) so the safe default takes over instead of killing the renderer.
+      if (saved && saved.__v === DEFAULT_CONFIG.__v) return deepMerge(DEFAULT_CONFIG, saved);
+    }
   } catch(e) {}
   return deepCopy(DEFAULT_CONFIG);
 }
