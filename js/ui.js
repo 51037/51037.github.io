@@ -25,6 +25,9 @@ const SLIDER_DEFS = [
   { section: 'Z-Depth', group: 'depth', rows: [
     { label: 'Factor',       key: 'factor',         min: 0,    max: 1,    step: 0.05 },
   ]},
+  { section: 'Annihilation', group: 'annihilation', rows: [
+    { label: 'Radius',       key: 'radius',         min: 0,    max: 60,   step: 1    },
+  ]},
   { section: 'Click FX', group: 'click', rows: [
     { label: 'Impulse',      key: 'impulse',        min: 0,    max: 15,   step: 0.5  },
     { label: 'Ripple Radius',key: 'rippleRadius',   min: 30,   max: 500,  step: 10   },

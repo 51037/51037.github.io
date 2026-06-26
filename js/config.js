@@ -5,6 +5,7 @@ const DEFAULT_CONFIG = {
   nodes:       { count: 9,   maxRadius: 300, maxSpeed: 1.0 },
   depth:       { enabled: true, factor: 0.6 },
   click:       { impulse: 3.0, rippleRadius: 180, rippleDuration: 800 },
+  annihilation:{ radius: 8 },
   debug:       false,
 };
 

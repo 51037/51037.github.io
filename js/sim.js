@@ -195,6 +195,8 @@ function updateSim(w, h, cfg, dt) {
     grid.insert(p);
   }
 
+  _checkAnnihilation(w, h, cfg);
+
   // Passive particles
   for (let i = 0; i < passiveParticles.length; i++) {
     const p = passiveParticles[i];
@@ -202,6 +204,32 @@ function updateSim(w, h, cfg, dt) {
     if (p.age >= p.maxAge) _respawnPassive(p, w, h, cfg.passive, cfg.depth);
     p.x = ((p.x + p.xvel) % w + w) % w;
     p.y = ((p.y + p.yvel) % h + h) % h;
+  }
+}
+
+// Uses the already-built grid so the cost is O(n * k) where k is tiny
+// for a small annihilation radius.
+function _checkAnnihilation(w, h, cfg) {
+  const r = cfg.annihilation.radius;
+  if (r <= 0) return;
+  const r2 = r * r;
+  const dead = new Set();
+
+  for (const p of particles) {
+    if (dead.has(p)) continue;
+    const near = grid.query(p.x, p.y, r);
+    for (const q of near) {
+      if (q === p || dead.has(q)) continue;
+      if (dist2(p.x, p.y, q.x, q.y) < r2) {
+        dead.add(p);
+        dead.add(q);
+        break;
+      }
+    }
+  }
+
+  for (const p of dead) {
+    _respawnParticle(p, w, h, cfg.particles, cfg.depth);
   }
 }
 
