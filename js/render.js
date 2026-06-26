@@ -14,6 +14,10 @@ function _lifeAlpha(p) {
 // Returns rgba string. For non-rainbow, uses cfg hue so slider updates apply live.
 function _pColor(p, alpha, pcfg) {
   if (pcfg.colorMode === 'white') return `rgba(255,255,255,${alpha.toFixed(3)})`;
+  if (pcfg.colorMode === 'palette') {
+    const [r,g,b] = lutColor(p.t != null ? p.t : 0.5);
+    return `rgba(${r},${g},${b},${alpha.toFixed(3)})`;
+  }
   const hue = pcfg.colorMode === 'rainbow' ? p.hue : pcfg.hue;
   const l   = 50 + p.z * 30; // depth drives lightness: far=50%, near=80%
   const [r, g, b] = hslToRgb(hue / 360, pcfg.saturation / 100, l / 100);
@@ -40,17 +44,24 @@ function renderActiveField(ctx, particles, nodes, cfg, mouseX, mouseY) {
   const nodeR2  = maxRN * maxRN;
   const pcfg    = cfg.particles;
   const useGrad = cfg.connections.gradient && pcfg.colorMode !== 'white';
+  const connOn  = cfg.connections.enabled;
+  const nodesOn = cfg.nodes.enabled;
 
   for (const p of particles) {
     const baseAlpha = _twinkle(p, pcfg.twinkle) * (0.4 + p.z * 0.6) * _lifeAlpha(p);
     ctx.fillStyle = _pColor(p, baseAlpha, pcfg);
     ctx.fillRect(p.x, p.y, p.size, p.size);
 
+    // Connections disabled → just draw the dots.
+    if (!connOn) continue;
+
     // Mirror original logic: render connections from p if p is in a node zone,
     // or per-connection if the target is near the mouse.
     let sourceInNode = false;
-    for (const n of nodes) {
-      if (dist2(p.x, p.y, n.x, n.y) <= nodeR2) { sourceInNode = true; break; }
+    if (nodesOn) {
+      for (const n of nodes) {
+        if (dist2(p.x, p.y, n.x, n.y) <= nodeR2) { sourceInNode = true; break; }
+      }
     }
 
     const near = getNearParticles(p.x, p.y, maxR, cfg.connections.nClosest);
@@ -92,5 +103,8 @@ function renderDebug(ctx, cfg, fps) {
   ctx.fillText(`Passive:   ${passiveParticles.length}`,     18, 64);
   ctx.fillText(`Nodes:     ${nodes.length}`,                18, 82);
   ctx.fillText(`Depth:     ${cfg.depth.enabled ? 'on  factor='+cfg.depth.factor : 'off'}`, 18, 100);
-  ctx.fillText(`Mode:      ${cfg.particles.colorMode}`,     18, 118);
+  const modeStr = cfg.particles.colorMode === 'palette'
+    ? `palette/${cfg.particles.palette}`
+    : cfg.particles.colorMode;
+  ctx.fillText(`Mode:      ${modeStr}`,                     18, 118);
 }

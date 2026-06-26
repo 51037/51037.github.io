@@ -3,6 +3,13 @@ let cfg;
 let mouseX = 0, mouseY = 0;
 let panel;
 let fps = 0, lastTime = 0;
+let SIM = 0; // simulation clock (ms of scaled time); drives all sim/fx timing
+
+// Click-amplification combo: accumulated energy that linearly dissipates over
+// COMBO_WINDOW (ms) of real time. Each click decays the leftover then adds 1,
+// so rapid clicks stack and a 3s pause fully resets it.
+let _comboEnergy = 0, _comboTime = 0;
+const COMBO_WINDOW = 3000;
 
 // Track previous counts and color mode to detect what changed.
 let _prev = { particles: 0, passive: 0, nodes: 0, colorMode: '' };
@@ -27,6 +34,7 @@ function init() {
   wrapper.appendChild(canvas);
   ctx = canvas.getContext('2d');
 
+  setActivePalette(cfg.particles.palette || 'fire');
   initSim(W, H, cfg);
   _syncPrev();
   initClouds();
@@ -40,10 +48,16 @@ function init() {
   canvas.addEventListener('click', e => {
     const r = canvas.getBoundingClientRect();
     const x = e.clientX - r.left, y = e.clientY - r.top;
-    // Count active ripples before adding the new one — each stacks +1x impulse.
-    const amplify = 1 + ripples.length;
-    applyClickImpulse(x, y, cfg, amplify);
-    addRipple(x, y, cfg);
+    // Decay the leftover combo by how long since the last click, then stack +1.
+    const now = performance.now();
+    _comboEnergy *= Math.max(0, 1 - (now - _comboTime) / COMBO_WINDOW);
+    _comboEnergy += 1;
+    _comboTime = now;
+
+    const amplify   = _comboEnergy;                 // impulse strength multiplier
+    const radiusMul = 1 + (_comboEnergy - 1) * 0.4; // reach multiplier
+    applyClickImpulse(x, y, cfg, amplify, radiusMul);
+    addRipple(x, y, cfg, radiusMul);
   });
 
   document.addEventListener('keydown', e => {
@@ -88,10 +102,15 @@ function _onConfigChange(newCfg) {
     _prev.nodes = cfg.nodes.count;
   }
 
-  // Instantly sync hues when color mode changes rather than waiting for respawn.
+  // Instantly sync hues/t-values when color mode changes rather than waiting for respawn.
   if (cfg.particles.colorMode !== _prev.colorMode) {
     syncParticleHues(cfg.particles.colorMode, cfg.particles.hue);
     _prev.colorMode = cfg.particles.colorMode;
+  }
+
+  // Keep palette LUT in sync (no-op when palette hasn't changed).
+  if (cfg.particles.colorMode === 'palette') {
+    setActivePalette(cfg.particles.palette);
   }
 }
 
@@ -104,6 +123,7 @@ function _onReset() {
   cfg = resetConfig();
   cfg.connections.maxRadius = (Math.min(W, H) / 7) | 0;
   cfg.nodes.maxRadius       = (Math.min(W, H) / 4) | 0;
+  setActivePalette(cfg.particles.palette || 'fire');
   initSim(W, H, cfg);
   _syncPrev();
   panel = buildPanel(cfg, _onConfigChange, _onSave, _onReset);
@@ -112,19 +132,28 @@ function _onReset() {
 }
 
 function _frame(ts) {
-  const dt = ts - lastTime;
+  const dt = ts - lastTime;            // real elapsed time — framerate is preserved
   if (dt > 0) fps = fps * 0.95 + (1000 / dt) * 0.05;
   lastTime = ts;
 
-  updateSim(W, H, cfg, dt);
+  // Global time scale: the sim sees a stretched/compressed dt, the loop does not.
+  const sdt = Math.max(0, dt) * cfg.sim.speed;
+  SIM += sdt;
+
+  // Flow field steers velocity before the sim relaxes energy + moves particles.
+  updateClouds(sdt, cfg);
+  applyFlowField(particles, sdt, cfg);
+  applyFlowField(passiveParticles, sdt, cfg);
+
+  updateSim(W, H, cfg, sdt);
   updateRipples();
-  updateClouds(dt, cfg);
+  updateLightning(sdt, cfg);
 
   renderBackground(ctx, W, H);
-  renderPassiveField(ctx, passiveParticles, cfg.particles.twinkle);
+  if (cfg.passive.enabled) renderPassiveField(ctx, passiveParticles, cfg.particles.twinkle);
   renderActiveField(ctx, particles, nodes, cfg, mouseX, mouseY);
   renderRipples(ctx);
-  renderClouds(ctx, W, H, cfg);
+  renderLightning(ctx, cfg);
   renderDebug(ctx, cfg, fps);
 
   requestAnimationFrame(_frame);

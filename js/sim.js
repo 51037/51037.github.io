@@ -26,15 +26,19 @@ function _spawnParticle(x, y, w, h, pc, dc, stagger) {
   const z   = Math.random();
   const df  = _depthFactor(z, dc);
   const ms  = pc.maxSpeed * df;
+  const xv  = (Math.random() * 2 - 1) * ms;
+  const yv  = (Math.random() * 2 - 1) * ms;
   const maxAge = (8 + Math.random() * 12) * 1000; // 8-20 s in ms
   return {
     x, y, z,
-    xvel:      (Math.random() * 2 - 1) * ms,
-    yvel:      (Math.random() * 2 - 1) * ms,
+    xvel:      xv,
+    yvel:      yv,
+    e0:        Math.hypot(xv, yv), // baseline energy the drag relaxes toward
     size:      Math.pow(Math.random(), 2) * pc.maxSize * df + 0.2,
     maxBright: 0.75 + Math.random() * 0.25,
     variance:  Math.random() * 0.2 - 0.1,
     hue:       pc.colorMode === 'rainbow' ? Math.random() * 360 : pc.hue,
+    t:         Math.random(), // colour position for palette mode
     age:       stagger ? Math.random() * maxAge * 0.75 : 0,
     maxAge,
   };
@@ -43,11 +47,14 @@ function _spawnParticle(x, y, w, h, pc, dc, stagger) {
 function _spawnPassive(x, y, w, h, pc, dc, stagger) {
   const z      = Math.random() * 0.45;
   const ms     = pc.maxSpeed * (0.3 + z);
+  const xv     = (Math.random() * 2 - 1) * ms;
+  const yv     = (Math.random() * 2 - 1) * ms;
   const maxAge = (10 + Math.random() * 15) * 1000;
   return {
     x, y, z,
-    xvel:      (Math.random() * 2 - 1) * ms,
-    yvel:      (Math.random() * 2 - 1) * ms,
+    xvel:      xv,
+    yvel:      yv,
+    e0:        Math.hypot(xv, yv),
     size:      Math.pow(Math.random(), 2) * pc.maxSize + 0.1,
     maxBright: 0.5 + Math.random() * 0.25,
     variance:  Math.random() * 0.15 - 0.075,
@@ -75,10 +82,12 @@ function _respawnParticle(p, w, h, pc, dc) {
   p.x = x; p.y = y; p.z = z;
   p.xvel      = (Math.random() * 2 - 1) * ms;
   p.yvel      = (Math.random() * 2 - 1) * ms;
+  p.e0        = Math.hypot(p.xvel, p.yvel);
   p.size      = Math.pow(Math.random(), 2) * pc.maxSize * df + 0.2;
   p.maxBright = 0.75 + Math.random() * 0.25;
   p.variance  = Math.random() * 0.2 - 0.1;
   p.hue       = pc.colorMode === 'rainbow' ? Math.random() * 360 : pc.hue;
+  p.t         = Math.random();
   p.age       = 0;
   p.maxAge    = (8 + Math.random() * 12) * 1000;
 }
@@ -90,6 +99,7 @@ function _respawnPassive(p, w, h, pc, dc) {
   p.z         = Math.random() * 0.45;
   p.xvel      = (Math.random() * 2 - 1) * ms;
   p.yvel      = (Math.random() * 2 - 1) * ms;
+  p.e0        = Math.hypot(p.xvel, p.yvel);
   p.size      = Math.pow(Math.random(), 2) * pc.maxSize + 0.1;
   p.maxBright = 0.5 + Math.random() * 0.25;
   p.variance  = Math.random() * 0.15 - 0.075;
@@ -168,7 +178,9 @@ function _pruneOldest(arr, n) {
 // Instantly update hues when color mode changes (avoids waiting for respawn).
 function syncParticleHues(colorMode, hue) {
   if (colorMode === 'rainbow') {
-    for (const p of particles) p.hue = Math.random() * 360;
+    for (const p of particles) { p.hue = Math.random() * 360; p.t = Math.random(); }
+  } else if (colorMode === 'palette') {
+    for (const p of particles) p.t = Math.random();
   } else {
     for (const p of particles) p.hue = hue;
   }
@@ -176,40 +188,65 @@ function syncParticleHues(colorMode, hue) {
 
 // ── Per-frame update ─────────────────────────────────────────────────────────
 
+// Relax a particle's speed toward its recorded baseline energy e0. Energy added
+// by clicks / flow / lightning bleeds off over time; the direction is preserved.
+function _applyDrag(p, drag, dt) {
+  const s = Math.hypot(p.xvel, p.yvel);
+  if (s < 1e-6) return;
+  const k    = Math.min(1, drag * dt / 1000);
+  const sNew = s + (p.e0 - s) * k;
+  const r    = sNew / s;
+  p.xvel *= r;
+  p.yvel *= r;
+}
+
 function updateSim(w, h, cfg, dt) {
-  // Nodes
-  for (const n of nodes) {
-    n.x = ((n.x + n.xvel) % w + w) % w;
-    n.y = ((n.y + n.yvel) % h + h) % h;
+  const dragOn = cfg.physics.enabled;
+  const drag   = cfg.physics.drag;
+  // Velocities are px/frame, so displacement is scaled by the sim-speed factor
+  // (not dt). dt still drives aging / drag / flow, which are time-based.
+  const spd = cfg.sim.speed;
+
+  // Nodes (skip movement entirely when disabled, but keep them for lightning).
+  if (cfg.nodes.enabled) {
+    for (const n of nodes) {
+      n.x = ((n.x + n.xvel * spd) % w + w) % w;
+      n.y = ((n.y + n.yvel * spd) % h + h) % h;
+    }
   }
 
-  // Active particles: age, respawn if expired, then move + index
+  // Active particles: age, respawn if expired, drag, then move + index
   grid.cellSize = cfg.connections.maxRadius;
   grid.clear();
   for (let i = 0; i < particles.length; i++) {
     const p = particles[i];
     p.age += dt;
     if (p.age >= p.maxAge) _respawnParticle(p, w, h, cfg.particles, cfg.depth);
-    p.x = ((p.x + p.xvel) % w + w) % w;
-    p.y = ((p.y + p.yvel) % h + h) % h;
+    if (dragOn) _applyDrag(p, drag, dt);
+    p.x = ((p.x + p.xvel * spd) % w + w) % w;
+    p.y = ((p.y + p.yvel * spd) % h + h) % h;
     grid.insert(p);
   }
 
   _checkAnnihilation(w, h, cfg);
 
   // Passive particles
-  for (let i = 0; i < passiveParticles.length; i++) {
-    const p = passiveParticles[i];
-    p.age += dt;
-    if (p.age >= p.maxAge) _respawnPassive(p, w, h, cfg.passive, cfg.depth);
-    p.x = ((p.x + p.xvel) % w + w) % w;
-    p.y = ((p.y + p.yvel) % h + h) % h;
+  if (cfg.passive.enabled) {
+    for (let i = 0; i < passiveParticles.length; i++) {
+      const p = passiveParticles[i];
+      p.age += dt;
+      if (p.age >= p.maxAge) _respawnPassive(p, w, h, cfg.passive, cfg.depth);
+      if (dragOn) _applyDrag(p, drag, dt);
+      p.x = ((p.x + p.xvel * spd) % w + w) % w;
+      p.y = ((p.y + p.yvel * spd) % h + h) % h;
+    }
   }
 }
 
 // Uses the already-built grid so the cost is O(n * k) where k is tiny
 // for a small annihilation radius.
 function _checkAnnihilation(w, h, cfg) {
+  if (!cfg.annihilation.enabled) return;
   const r = cfg.annihilation.radius;
   if (r <= 0) return;
   const r2 = r * r;
@@ -245,9 +282,9 @@ function getNearParticles(px, py, maxR, nClosest) {
   return nClosest > 0 ? hits.slice(0, nClosest) : hits;
 }
 
-// amplify = 1 + number of ripples already expanding at click time
-function applyClickImpulse(x, y, cfg, amplify) {
-  const r   = cfg.click.rippleRadius;
+// amplify / radiusMul = 1 + click-combo scaling (successive clicks stack).
+function applyClickImpulse(x, y, cfg, amplify, radiusMul) {
+  const r   = cfg.click.rippleRadius * (radiusMul || 1);
   const r2  = r * r;
   const str = cfg.click.impulse * (amplify || 1);
 
