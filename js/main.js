@@ -19,12 +19,7 @@ function init() {
   W = window.innerWidth;
   H = window.innerHeight;
 
-  const hasSaved = !!localStorage.getItem('bgConfig');
   cfg = loadConfig();
-  if (!hasSaved) {
-    cfg.connections.maxRadius = (Math.min(W, H) / 7) | 0;
-    cfg.nodes.maxRadius       = (Math.min(W, H) / 4) | 0;
-  }
 
   canvas = document.createElement('canvas');
   canvas.id = 'board';
@@ -127,8 +122,6 @@ function _onSave(c) {
 
 function _onReset() {
   cfg = resetConfig();
-  cfg.connections.maxRadius = (Math.min(W, H) / 7) | 0;
-  cfg.nodes.maxRadius       = (Math.min(W, H) / 4) | 0;
   setActivePalette(cfg.particles.palette || 'fire');
   initSim(W, H, cfg);
   _syncPrev();

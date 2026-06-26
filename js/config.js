@@ -1,23 +1,23 @@
 const DEFAULT_CONFIG = {
-  sim:         { speed: 1.0 }, // global time scale; framerate is unaffected
-  particles:   { count: 250, maxSize: 2.25, maxSpeed: 0.5,  colorMode: 'white', hue: 200, saturation: 40, twinkle: 1.0, palette: 'fire' },
+  sim:         { speed: 0.14605110782519648 }, // global time scale; framerate is unaffected
+  particles:   { count: 800, maxSize: 2.25, maxSpeed: 0.15, colorMode: 'palette', hue: 200, saturation: 100, twinkle: 1.0, palette: 'candy' },
   passive:     { enabled: true, count: 75,  maxSize: 2.0,  maxSpeed: 0.4 },
-  connections: { enabled: true, maxRadius: 150, nClosest: 3, alphaBias: 0.4, gradient: true },
+  connections: { enabled: true, maxRadius: 125, nClosest: 12, alphaBias: 0.1, gradient: true },
   // Mouse reveal "energy": charges with movement, decays while idle.
   mouse:       { energyGain: 0.005, energyDecay: 0.5 },
-  nodes:       { enabled: true, count: 9,   maxRadius: 300, maxSpeed: 1.0 },
+  nodes:       { enabled: true, count: 25,  maxRadius: 250, maxSpeed: 0.1 },
   depth:       { enabled: true, factor: 0.6 },
-  physics:     { enabled: true, drag: 0.8 }, // rate (per sec) velocities relax toward baseline energy
-  click:       { impulse: 3.0, rippleRadius: 180, rippleDuration: 800 },
+  physics:     { enabled: true, drag: 3.45 }, // rate (per sec) velocities relax toward baseline energy
+  click:       { impulse: 6.5, rippleRadius: 180, rippleDuration: 800 },
   annihilation:{ enabled: true, radius: 8 },
   lightning: {
     enabled:    true,
-    frequency:  0.2,   // expected events per second
+    frequency:  3,     // expected events per second
     duration:   400,   // ms a bolt stays lit
     radius:     450,   // heavy-node reach; nodes within light up
     branches:   6,     // max nodes a single strike connects to
-    intensity:  1.0,   // brightness multiplier
-    pull:       2.0,   // gravitational impulse the heavy node imparts to particles
+    intensity:  0.3,   // brightness multiplier
+    pull:       0.5,   // gravitational impulse the heavy node imparts to particles
     color:      'match', // match | white | palette | rainbow | mono
     // ── graphical / shape controls ──
     jaggedness: 0.07,  // perpendicular jitter as a fraction of bolt length
@@ -31,13 +31,13 @@ const DEFAULT_CONFIG = {
   clouds: {
     enabled:     true,
     scale:       250,   // noise frequency; larger = broader, slower-turning currents
-    speed:       1.5,   // how fast the flow pattern drifts (× 0.0001 internally)
+    speed:       0.6,   // how fast the flow pattern drifts (× 0.0001 internally)
     force:       0.04,  // steering strength applied per frame at 60fps
     octaves:     4,
     persistence: 0.5,
     direction:   0,     // degrees the field drifts; 0 = rightward
   },
-  debug:       false,
+  debug:       true,
 };
 
 function loadConfig() {

@@ -171,6 +171,7 @@ function buildPanel(cfg, onChange, onSave, onReset) {
 
   html += `<div class="panel-btns">
     <button id="btn-save">Save Config</button>
+    <button id="btn-export">Export</button>
     <button id="btn-reset" class="danger">Reset</button>
   </div>`;
 
@@ -267,6 +268,21 @@ function buildPanel(cfg, onChange, onSave, onReset) {
 
   panel.querySelector('#btn-save').addEventListener('click', () => onSave(cfg));
   panel.querySelector('#btn-reset').addEventListener('click', onReset);
+
+  // Export current config as JSON to the clipboard (and console) so it can be
+  // pasted back in and baked into DEFAULT_CONFIG as the shipped default.
+  panel.querySelector('#btn-export').addEventListener('click', () => {
+    const json = JSON.stringify(cfg, null, 2);
+    console.log('=== BG CONFIG ===\n' + json);
+    const done = () => { if (typeof _toast === 'function') _toast('Config copied to clipboard'); };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(json).then(done).catch(() => {
+        if (typeof _toast === 'function') _toast('Copy failed — see console');
+      });
+    } else {
+      if (typeof _toast === 'function') _toast('Clipboard unavailable — see console');
+    }
+  });
 
   return panel;
 }
