@@ -1,13 +1,158 @@
+* { box-sizing: border-box; }
+
 body {
   margin: 0; padding: 0;
   overflow: hidden;
   background: #000;
-  height:100%;
+  height: 100%;
 }
 
 .wrapper {
   margin: 0; padding: 0;
   position: relative;
-  width:100%;
-  height:100%;
+  width: 100%; height: 100%;
+}
+
+/* ── Control panel ── */
+#ctrl-panel {
+  display: none;
+  position: fixed;
+  top: 0; right: 0;
+  width: 290px;
+  height: 100vh;
+  background: rgba(4, 6, 14, 0.92);
+  color: #bbb;
+  font: 12px/1.5 monospace;
+  padding: 14px 12px 20px;
+  overflow-y: auto;
+  border-left: 1px solid #1a1f35;
+  z-index: 100;
+  user-select: none;
+}
+
+.panel-title {
+  font-size: 14px;
+  font-weight: bold;
+  color: #e8eeff;
+  margin-bottom: 14px;
+  letter-spacing: 0.05em;
+}
+
+.panel-hint {
+  font-size: 10px;
+  color: #444;
+  font-weight: normal;
+}
+
+.panel-section {
+  margin-bottom: 12px;
+  border-bottom: 1px solid #181e30;
+  padding-bottom: 8px;
+}
+
+.section-label {
+  color: #6a9fff;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 6px;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 5px;
+  gap: 4px;
+}
+
+.row-label {
+  flex: 0 0 108px;
+  font-size: 11px;
+  color: #888;
+}
+
+.row input[type=range] {
+  flex: 1;
+  height: 4px;
+  cursor: pointer;
+  accent-color: #6a9fff;
+  background: transparent;
+}
+
+.row-val {
+  flex: 0 0 38px;
+  text-align: right;
+  font-size: 11px;
+  color: #ccc;
+}
+
+select {
+  background: #0d1020;
+  color: #ccc;
+  border: 1px solid #2a3050;
+  padding: 3px 8px;
+  font: 12px monospace;
+  cursor: pointer;
+  width: 100%;
+}
+
+select:focus { outline: 1px solid #6a9fff; }
+
+.chk-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 5px;
+  cursor: pointer;
+  color: #aaa;
+  font-size: 11px;
+}
+
+.chk-row input[type=checkbox] {
+  accent-color: #6a9fff;
+  width: 13px; height: 13px;
+  cursor: pointer;
+}
+
+.panel-btns {
+  display: flex;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.panel-btns button {
+  flex: 1;
+  padding: 6px 0;
+  font: 11px monospace;
+  cursor: pointer;
+  border-radius: 3px;
+  border: 1px solid #2a3a5a;
+  background: #0a1428;
+  color: #7ab0ff;
+  transition: filter 0.15s;
+}
+
+.panel-btns button.danger {
+  background: #1a0810;
+  border-color: #5a2030;
+  color: #ff7a8a;
+}
+
+.panel-btns button:hover { filter: brightness(1.4); }
+
+/* ── Toast notification ── */
+.toast {
+  position: fixed;
+  bottom: 28px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #0a1428;
+  color: #7ab0ff;
+  padding: 8px 20px;
+  border-radius: 4px;
+  font: 12px monospace;
+  z-index: 200;
+  border: 1px solid #2a3a5a;
+  pointer-events: none;
+  transition: opacity 0.5s;
 }
