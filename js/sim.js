@@ -179,9 +179,8 @@ function syncParticleHues(colorMode, hue) {
 function updateSim(w, h, cfg, dt) {
   // Nodes
   for (const n of nodes) {
-    n.x += n.xvel; n.y += n.yvel;
-    if (n.x > w || n.x < 0) n.xvel *= -1;
-    if (n.y > h || n.y < 0) n.yvel *= -1;
+    n.x = ((n.x + n.xvel) % w + w) % w;
+    n.y = ((n.y + n.yvel) % h + h) % h;
   }
 
   // Active particles: age, respawn if expired, then move + index
@@ -191,9 +190,8 @@ function updateSim(w, h, cfg, dt) {
     const p = particles[i];
     p.age += dt;
     if (p.age >= p.maxAge) _respawnParticle(p, w, h, cfg.particles, cfg.depth);
-    p.x += p.xvel; p.y += p.yvel;
-    if (p.x > w || p.x < 0) p.xvel *= -1;
-    if (p.y > h || p.y < 0) p.yvel *= -1;
+    p.x = ((p.x + p.xvel) % w + w) % w;
+    p.y = ((p.y + p.yvel) % h + h) % h;
     grid.insert(p);
   }
 
@@ -202,9 +200,8 @@ function updateSim(w, h, cfg, dt) {
     const p = passiveParticles[i];
     p.age += dt;
     if (p.age >= p.maxAge) _respawnPassive(p, w, h, cfg.passive, cfg.depth);
-    p.x += p.xvel; p.y += p.yvel;
-    if (p.x > w || p.x < 0) p.xvel *= -1;
-    if (p.y > h || p.y < 0) p.yvel *= -1;
+    p.x = ((p.x + p.xvel) % w + w) % w;
+    p.y = ((p.y + p.yvel) % h + h) % h;
   }
 }
 
