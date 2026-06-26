@@ -245,10 +245,11 @@ function getNearParticles(px, py, maxR, nClosest) {
   return nClosest > 0 ? hits.slice(0, nClosest) : hits;
 }
 
-function applyClickImpulse(x, y, cfg) {
+// amplify = 1 + number of ripples already expanding at click time
+function applyClickImpulse(x, y, cfg, amplify) {
   const r   = cfg.click.rippleRadius;
   const r2  = r * r;
-  const str = cfg.click.impulse;
+  const str = cfg.click.impulse * (amplify || 1);
 
   const _push = p => {
     const d2 = dist2(p.x, p.y, x, y);

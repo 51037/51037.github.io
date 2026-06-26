@@ -38,8 +38,11 @@ function init() {
 
   canvas.addEventListener('click', e => {
     const r = canvas.getBoundingClientRect();
-    applyClickImpulse(e.clientX - r.left, e.clientY - r.top, cfg);
-    addRipple(e.clientX - r.left, e.clientY - r.top, cfg);
+    const x = e.clientX - r.left, y = e.clientY - r.top;
+    // Count active ripples before adding the new one — each stacks +1x impulse.
+    const amplify = 1 + ripples.length;
+    applyClickImpulse(x, y, cfg, amplify);
+    addRipple(x, y, cfg);
   });
 
   document.addEventListener('keydown', e => {
