@@ -3,7 +3,9 @@ let cfg;
 let mouseX = 0, mouseY = 0;
 let panel;
 let fps = 0, lastTime = 0;
-let reinitTimer = null;
+
+// Track previous counts and color mode to detect what changed.
+let _prev = { particles: 0, passive: 0, nodes: 0, colorMode: '' };
 
 function init() {
   W = window.innerWidth;
@@ -11,11 +13,9 @@ function init() {
 
   const hasSaved = !!localStorage.getItem('bgConfig');
   cfg = loadConfig();
-
-  // Auto-scale radius defaults for screen size on first run
   if (!hasSaved) {
-    cfg.connections.maxRadius = (Math.min(W, H) / 7)  | 0;
-    cfg.nodes.maxRadius       = (Math.min(W, H) / 4)  | 0;
+    cfg.connections.maxRadius = (Math.min(W, H) / 7) | 0;
+    cfg.nodes.maxRadius       = (Math.min(W, H) / 4) | 0;
   }
 
   canvas = document.createElement('canvas');
@@ -28,6 +28,7 @@ function init() {
   ctx = canvas.getContext('2d');
 
   initSim(W, H, cfg);
+  _syncPrev();
 
   canvas.addEventListener('mousemove', e => {
     const r = canvas.getBoundingClientRect();
@@ -37,9 +38,8 @@ function init() {
 
   canvas.addEventListener('click', e => {
     const r = canvas.getBoundingClientRect();
-    const x = e.clientX - r.left, y = e.clientY - r.top;
-    applyClickImpulse(x, y, cfg);
-    addRipple(x, y, cfg);
+    applyClickImpulse(e.clientX - r.left, e.clientY - r.top, cfg);
+    addRipple(e.clientX - r.left, e.clientY - r.top, cfg);
   });
 
   document.addEventListener('keydown', e => {
@@ -52,16 +52,42 @@ function init() {
   requestAnimationFrame(_frame);
 }
 
+function _syncPrev() {
+  _prev.particles  = cfg.particles.count;
+  _prev.passive    = cfg.passive.count;
+  _prev.nodes      = cfg.nodes.count;
+  _prev.colorMode  = cfg.particles.colorMode;
+}
+
 function _toggleDebug() {
   cfg.debug = !cfg.debug;
   panel.style.display = cfg.debug ? 'block' : 'none';
 }
 
-function _onConfigChange(newCfg, needsReinit) {
+// Called by the panel on every slider/select change.
+// No more full reinit — we add/delete particles as needed.
+function _onConfigChange(newCfg) {
   cfg = newCfg;
-  if (needsReinit) {
-    clearTimeout(reinitTimer);
-    reinitTimer = setTimeout(() => initSim(W, H, cfg), 220);
+
+  if (cfg.particles.count !== _prev.particles) {
+    resizeParticles(cfg.particles.count, W, H, cfg);
+    _prev.particles = cfg.particles.count;
+  }
+
+  if (cfg.passive.count !== _prev.passive) {
+    resizePassive(cfg.passive.count, W, H, cfg);
+    _prev.passive = cfg.passive.count;
+  }
+
+  if (cfg.nodes.count !== _prev.nodes) {
+    resizeNodes(cfg.nodes.count, W, H, cfg);
+    _prev.nodes = cfg.nodes.count;
+  }
+
+  // Instantly sync hues when color mode changes rather than waiting for respawn.
+  if (cfg.particles.colorMode !== _prev.colorMode) {
+    syncParticleHues(cfg.particles.colorMode, cfg.particles.hue);
+    _prev.colorMode = cfg.particles.colorMode;
   }
 }
 
@@ -75,6 +101,7 @@ function _onReset() {
   cfg.connections.maxRadius = (Math.min(W, H) / 7) | 0;
   cfg.nodes.maxRadius       = (Math.min(W, H) / 4) | 0;
   initSim(W, H, cfg);
+  _syncPrev();
   panel = buildPanel(cfg, _onConfigChange, _onSave, _onReset);
   panel.style.display = cfg.debug ? 'block' : 'none';
   _toast('Config reset');
@@ -85,7 +112,7 @@ function _frame(ts) {
   if (dt > 0) fps = fps * 0.95 + (1000 / dt) * 0.05;
   lastTime = ts;
 
-  updateSim(W, H, cfg);
+  updateSim(W, H, cfg, dt);
   updateRipples();
 
   renderBackground(ctx, W, H);
@@ -113,8 +140,9 @@ window.addEventListener('resize', () => {
   H = window.innerHeight;
   canvas.width  = W;
   canvas.height = H;
-  clearTimeout(reinitTimer);
-  reinitTimer = setTimeout(() => initSim(W, H, cfg), 150);
+  // On resize just reinit — particle positions are meaningless at the old resolution.
+  initSim(W, H, cfg);
+  _syncPrev();
 });
 
 init();

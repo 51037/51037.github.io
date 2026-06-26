@@ -1,35 +1,34 @@
-// Slider definitions. reinit:true means particle arrays must be recreated.
 const SLIDER_DEFS = [
   { section: 'Particles', group: 'particles', rows: [
-    { label: 'Count',        key: 'count',       min: 10,   max: 800,  step: 1,    reinit: true  },
-    { label: 'Max Size',     key: 'maxSize',      min: 0.5,  max: 10,   step: 0.1,  reinit: true  },
-    { label: 'Max Speed',    key: 'maxSpeed',     min: 0.05, max: 4,    step: 0.05, reinit: true  },
-    { label: 'Twinkle',      key: 'twinkle',      min: 0,    max: 3,    step: 0.05                 },
-    { label: 'Hue',          key: 'hue',          min: 0,    max: 360,  step: 1                    },
-    { label: 'Saturation',   key: 'saturation',   min: 0,    max: 100,  step: 1                    },
+    { label: 'Count',        key: 'count',          min: 10,   max: 800,  step: 1    },
+    { label: 'Max Size',     key: 'maxSize',         min: 0.5,  max: 10,   step: 0.1  },
+    { label: 'Max Speed',    key: 'maxSpeed',        min: 0.05, max: 4,    step: 0.05 },
+    { label: 'Twinkle',      key: 'twinkle',         min: 0,    max: 3,    step: 0.05 },
+    { label: 'Hue',          key: 'hue',             min: 0,    max: 360,  step: 1    },
+    { label: 'Saturation',   key: 'saturation',      min: 0,    max: 100,  step: 1    },
   ]},
   { section: 'Passive Stars', group: 'passive', rows: [
-    { label: 'Count',        key: 'count',       min: 0,    max: 400,  step: 1,    reinit: true  },
-    { label: 'Max Size',     key: 'maxSize',      min: 0.5,  max: 8,    step: 0.1,  reinit: true  },
-    { label: 'Max Speed',    key: 'maxSpeed',     min: 0.01, max: 3,    step: 0.05, reinit: true  },
+    { label: 'Count',        key: 'count',          min: 0,    max: 400,  step: 1    },
+    { label: 'Max Size',     key: 'maxSize',         min: 0.5,  max: 8,    step: 0.1  },
+    { label: 'Max Speed',    key: 'maxSpeed',        min: 0.01, max: 3,    step: 0.05 },
   ]},
   { section: 'Connections', group: 'connections', rows: [
-    { label: 'Max Radius',   key: 'maxRadius',   min: 30,   max: 500,  step: 5                    },
-    { label: 'N Closest',    key: 'nClosest',     min: 1,    max: 12,   step: 1                    },
-    { label: 'Alpha Bias',   key: 'alphaBias',    min: 0.05, max: 1,    step: 0.05                 },
+    { label: 'Max Radius',   key: 'maxRadius',      min: 30,   max: 500,  step: 5    },
+    { label: 'N Closest',    key: 'nClosest',        min: 1,    max: 12,   step: 1    },
+    { label: 'Alpha Bias',   key: 'alphaBias',       min: 0.05, max: 1,    step: 0.05 },
   ]},
   { section: 'Nodes', group: 'nodes', rows: [
-    { label: 'Count',        key: 'count',       min: 0,    max: 25,   step: 1,    reinit: true  },
-    { label: 'Zone Radius',  key: 'maxRadius',   min: 50,   max: 600,  step: 10                   },
-    { label: 'Max Speed',    key: 'maxSpeed',     min: 0.1,  max: 5,    step: 0.1,  reinit: true  },
+    { label: 'Count',        key: 'count',          min: 0,    max: 25,   step: 1    },
+    { label: 'Zone Radius',  key: 'maxRadius',      min: 50,   max: 600,  step: 10   },
+    { label: 'Max Speed',    key: 'maxSpeed',        min: 0.1,  max: 5,    step: 0.1  },
   ]},
   { section: 'Z-Depth', group: 'depth', rows: [
-    { label: 'Factor',       key: 'factor',      min: 0,    max: 1,    step: 0.05, reinit: true  },
+    { label: 'Factor',       key: 'factor',         min: 0,    max: 1,    step: 0.05 },
   ]},
   { section: 'Click FX', group: 'click', rows: [
-    { label: 'Impulse',      key: 'impulse',     min: 0,    max: 15,   step: 0.5                  },
-    { label: 'Ripple Radius',key: 'rippleRadius',min: 30,   max: 500,  step: 10                   },
-    { label: 'Duration (ms)',key: 'rippleDuration',min: 100,max: 3000, step: 100                  },
+    { label: 'Impulse',      key: 'impulse',        min: 0,    max: 15,   step: 0.5  },
+    { label: 'Ripple Radius',key: 'rippleRadius',   min: 30,   max: 500,  step: 10   },
+    { label: 'Duration (ms)',key: 'rippleDuration', min: 100,  max: 3000, step: 100  },
   ]},
 ];
 
@@ -49,7 +48,7 @@ function buildPanel(cfg, onChange, onSave, onReset) {
       html += `<div class="row">
         <span class="row-label">${sl.label}</span>
         <input type="range" min="${sl.min}" max="${sl.max}" step="${sl.step}" value="${val}"
-          data-group="${group}" data-key="${sl.key}" data-reinit="${sl.reinit ? '1' : '0'}">
+          data-group="${group}" data-key="${sl.key}">
         <span class="row-val">${val}</span>
       </div>`;
     }
@@ -82,26 +81,25 @@ function buildPanel(cfg, onChange, onSave, onReset) {
 
   panel.querySelectorAll('input[type=range]').forEach(el => {
     el.addEventListener('input', () => {
-      const v = parseFloat(el.value);
-      cfg[el.dataset.group][el.dataset.key] = v;
-      el.nextElementSibling.textContent = v;
-      onChange(cfg, el.dataset.reinit === '1');
+      cfg[el.dataset.group][el.dataset.key] = parseFloat(el.value);
+      el.nextElementSibling.textContent = el.value;
+      onChange(cfg);
     });
   });
 
   panel.querySelector('#sel-colormode').addEventListener('change', e => {
     cfg.particles.colorMode = e.target.value;
-    onChange(cfg, true);
+    onChange(cfg);
   });
 
   panel.querySelector('#chk-depth').addEventListener('change', e => {
     cfg.depth.enabled = e.target.checked;
-    onChange(cfg, true);
+    onChange(cfg);
   });
 
   panel.querySelector('#chk-gradient').addEventListener('change', e => {
     cfg.connections.gradient = e.target.checked;
-    onChange(cfg, false);
+    onChange(cfg);
   });
 
   panel.querySelector('#btn-save').addEventListener('click', () => onSave(cfg));

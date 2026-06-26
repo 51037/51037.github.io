@@ -3,6 +3,14 @@ function _twinkle(p, factor) {
   return Math.min(p.maxBright + v, 1.0);
 }
 
+// Fade-in during first 8% of life, full mid-life, fade-out over last 15%.
+function _lifeAlpha(p) {
+  const t = p.age / p.maxAge;
+  if (t < 0.08) return t / 0.08;
+  if (t > 0.85) return (1 - t) / 0.15;
+  return 1.0;
+}
+
 // Returns rgba string. For non-rainbow, uses cfg hue so slider updates apply live.
 function _pColor(p, alpha, pcfg) {
   if (pcfg.colorMode === 'white') return `rgba(255,255,255,${alpha.toFixed(3)})`;
@@ -19,7 +27,7 @@ function renderBackground(ctx, w, h) {
 
 function renderPassiveField(ctx, passiveParticles, twinkleFactor) {
   for (const p of passiveParticles) {
-    const alpha = _twinkle(p, twinkleFactor) * (0.2 + p.z * 0.5);
+    const alpha = _twinkle(p, twinkleFactor) * (0.2 + p.z * 0.5) * _lifeAlpha(p);
     ctx.fillStyle = `rgba(255,255,255,${alpha.toFixed(3)})`;
     ctx.fillRect(p.x, p.y, p.size, p.size);
   }
@@ -34,7 +42,7 @@ function renderActiveField(ctx, particles, nodes, cfg, mouseX, mouseY) {
   const useGrad = cfg.connections.gradient && pcfg.colorMode !== 'white';
 
   for (const p of particles) {
-    const baseAlpha = _twinkle(p, pcfg.twinkle) * (0.4 + p.z * 0.6);
+    const baseAlpha = _twinkle(p, pcfg.twinkle) * (0.4 + p.z * 0.6) * _lifeAlpha(p);
     ctx.fillStyle = _pColor(p, baseAlpha, pcfg);
     ctx.fillRect(p.x, p.y, p.size, p.size);
 
