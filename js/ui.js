@@ -25,6 +25,16 @@ const SLIDER_DEFS = [
   { section: 'Z-Depth', group: 'depth', rows: [
     { label: 'Factor',       key: 'factor',         min: 0,    max: 1,    step: 0.05 },
   ]},
+  { section: 'Clouds', group: 'clouds', rows: [
+    { label: 'Scale',       key: 'scale',       min: 30,  max: 800,  step: 10   },
+    { label: 'Speed',       key: 'speed',       min: 0,   max: 10,   step: 0.1  },
+    { label: 'Opacity',     key: 'opacity',     min: 0,   max: 1,    step: 0.01 },
+    { label: 'Threshold',   key: 'threshold',   min: 0,   max: 0.95, step: 0.01 },
+    { label: 'Octaves',     key: 'octaves',     min: 1,   max: 8,    step: 1    },
+    { label: 'Persistence', key: 'persistence', min: 0.1, max: 0.95, step: 0.05 },
+    { label: 'Direction °', key: 'direction',   min: 0,   max: 360,  step: 1    },
+    { label: 'Resolution',  key: 'resolution',  min: 2,   max: 14,   step: 1    },
+  ]},
   { section: 'Annihilation', group: 'annihilation', rows: [
     { label: 'Radius',       key: 'radius',         min: 0,    max: 60,   step: 1    },
   ]},
@@ -70,8 +80,9 @@ function buildPanel(cfg, onChange, onSave, onReset) {
 
   html += `<div class="panel-section">
     <div class="section-label">Options</div>
-    <label class="chk-row"><input type="checkbox" id="chk-depth"    ${cfg.depth.enabled          ? 'checked' : ''}> Z-Depth</label>
-    <label class="chk-row"><input type="checkbox" id="chk-gradient" ${cfg.connections.gradient   ? 'checked' : ''}> Gradient lines</label>
+    <label class="chk-row"><input type="checkbox" id="chk-depth"    ${cfg.depth.enabled        ? 'checked' : ''}> Z-Depth</label>
+    <label class="chk-row"><input type="checkbox" id="chk-gradient" ${cfg.connections.gradient  ? 'checked' : ''}> Gradient lines</label>
+    <label class="chk-row"><input type="checkbox" id="chk-clouds"   ${cfg.clouds.enabled        ? 'checked' : ''}> Clouds</label>
   </div>`;
 
   html += `<div class="panel-btns">
@@ -102,6 +113,11 @@ function buildPanel(cfg, onChange, onSave, onReset) {
 
   panel.querySelector('#chk-gradient').addEventListener('change', e => {
     cfg.connections.gradient = e.target.checked;
+    onChange(cfg);
+  });
+
+  panel.querySelector('#chk-clouds').addEventListener('change', e => {
+    cfg.clouds.enabled = e.target.checked;
     onChange(cfg);
   });
 

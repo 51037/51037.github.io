@@ -29,6 +29,7 @@ function init() {
 
   initSim(W, H, cfg);
   _syncPrev();
+  initClouds();
 
   canvas.addEventListener('mousemove', e => {
     const r = canvas.getBoundingClientRect();
@@ -117,11 +118,13 @@ function _frame(ts) {
 
   updateSim(W, H, cfg, dt);
   updateRipples();
+  updateClouds(dt, cfg);
 
   renderBackground(ctx, W, H);
   renderPassiveField(ctx, passiveParticles, cfg.particles.twinkle);
   renderActiveField(ctx, particles, nodes, cfg, mouseX, mouseY);
   renderRipples(ctx);
+  renderClouds(ctx, W, H, cfg);
   renderDebug(ctx, cfg, fps);
 
   requestAnimationFrame(_frame);

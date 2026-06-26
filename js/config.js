@@ -6,6 +6,17 @@ const DEFAULT_CONFIG = {
   depth:       { enabled: true, factor: 0.6 },
   click:       { impulse: 3.0, rippleRadius: 180, rippleDuration: 800 },
   annihilation:{ radius: 8 },
+  clouds: {
+    enabled:     true,
+    scale:       250,   // noise frequency; larger = bigger cloud shapes
+    speed:       1.5,   // drift speed (× 0.0001 internally)
+    opacity:     0.13,
+    threshold:   0.38,  // noise cutoff; raise to make clouds sparser
+    octaves:     4,
+    persistence: 0.5,
+    direction:   0,     // degrees; 0 = drift rightward
+    resolution:  6,     // px per noise sample; higher = faster but blockier
+  },
   debug:       false,
 };
 
