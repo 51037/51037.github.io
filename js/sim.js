@@ -221,7 +221,8 @@ function applyClickImpulse(x, y, cfg) {
   const r   = cfg.click.rippleRadius;
   const r2  = r * r;
   const str = cfg.click.impulse;
-  for (const p of particles) {
+
+  const _push = p => {
     const d2 = dist2(p.x, p.y, x, y);
     if (d2 > 0 && d2 < r2) {
       const d = Math.sqrt(d2);
@@ -229,5 +230,9 @@ function applyClickImpulse(x, y, cfg) {
       p.xvel += (p.x - x) / d * force;
       p.yvel += (p.y - y) / d * force;
     }
-  }
+  };
+
+  for (const p of particles)        _push(p);
+  for (const p of passiveParticles) _push(p);
+  for (const n of nodes)            _push(n);
 }
