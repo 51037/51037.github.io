@@ -64,7 +64,8 @@ function _triggerLightning(cfg) {
     born:      SIM,
     dur:       lc.duration,
     intensity: lc.intensity,
-    t:         Math.random(), // colour position in the active palette
+    t:         0.5 + Math.random() * 0.5, // brighter half of the palette so the hue reads
+    hue:       Math.random(),             // stable hue for rainbow mode
     segs,
   });
 
@@ -114,9 +115,24 @@ function _applyLightningPull(x, y, radius, strength) {
   }
 }
 
+// Resolve a bolt's base [r,g,b]. 'match' follows the particle colour mode so
+// lightning tracks the coloring selection; the others force a specific look.
+function _boltRGB(b, pcfg, source) {
+  let mode = source === 'match' ? pcfg.colorMode : source;
+  switch (mode) {
+    case 'white':   return [255, 255, 255];
+    case 'palette': return lutColor(b.t);
+    case 'rainbow': return hslToRgb(b.hue, pcfg.saturation / 100, 0.6);
+    case 'mono':
+    case 'monochrome': return hslToRgb(pcfg.hue / 360, pcfg.saturation / 100, 0.6);
+    default:        return [255, 255, 255]; // particle 'white' mode → white bolts
+  }
+}
+
 function renderLightning(ctx, cfg) {
   if (bolts.length === 0) return;
   const lc  = cfg.lightning;
+  const pcfg = cfg.particles;
   ctx.save();
   ctx.lineCap = 'round';
   ctx.lineJoin = 'round';
@@ -124,10 +140,10 @@ function renderLightning(ctx, cfg) {
     const t = (SIM - b.born) / b.dur;
     const a = 1 - t;
     const alpha = Math.min(1, a * a * b.intensity);
-    // Pull the bolt colour from the active palette LUT, lightened toward white
-    // at the core so it still reads as a hot arc.
-    const [r, g, bl] = lutColor(b.t);
-    const lift = v => Math.round(v + (255 - v) * 0.45);
+    // Bolt colour follows the lightning colour source, lifted slightly toward
+    // white so the hue stays dominant while the core still reads as hot.
+    const [r, g, bl] = _boltRGB(b, pcfg, lc.color);
+    const lift = v => Math.round(v + (255 - v) * 0.2);
     ctx.strokeStyle = `rgba(${lift(r)},${lift(g)},${lift(bl)},${alpha.toFixed(3)})`;
     ctx.shadowColor = `rgba(${r},${g},${bl},${alpha.toFixed(3)})`;
     ctx.shadowBlur  = lc.glow * a;

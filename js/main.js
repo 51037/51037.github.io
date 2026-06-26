@@ -1,6 +1,7 @@
 let canvas, ctx, W, H;
 let cfg;
 let mouseX = 0, mouseY = 0;
+let mouseEnergy = 0; // 0..1; charged by movement, decays while idle
 let panel;
 let fps = 0, lastTime = 0;
 let SIM = 0; // simulation clock (ms of scaled time); drives all sim/fx timing
@@ -41,8 +42,13 @@ function init() {
 
   canvas.addEventListener('mousemove', e => {
     const r = canvas.getBoundingClientRect();
-    mouseX = e.clientX - r.left;
-    mouseY = e.clientY - r.top;
+    const nx = e.clientX - r.left, ny = e.clientY - r.top;
+    // Accumulate energy from collected movement (skip the first event's jump).
+    if (mouseX || mouseY) {
+      const dm = Math.hypot(nx - mouseX, ny - mouseY);
+      mouseEnergy = Math.min(1, mouseEnergy + dm * cfg.mouse.energyGain);
+    }
+    mouseX = nx; mouseY = ny;
   });
 
   canvas.addEventListener('click', e => {
@@ -140,6 +146,9 @@ function _frame(ts) {
   const sdt = Math.max(0, dt) * cfg.sim.speed;
   SIM += sdt;
 
+  // Idle mouse bleeds off its reveal energy (real time, independent of sim speed).
+  mouseEnergy = Math.max(0, mouseEnergy - cfg.mouse.energyDecay * dt / 1000);
+
   // Flow field steers velocity before the sim relaxes energy + moves particles.
   updateClouds(sdt, cfg);
   applyFlowField(particles, sdt, cfg);
@@ -151,7 +160,7 @@ function _frame(ts) {
 
   renderBackground(ctx, W, H);
   if (cfg.passive.enabled) renderPassiveField(ctx, passiveParticles, cfg.particles.twinkle);
-  renderActiveField(ctx, particles, nodes, cfg, mouseX, mouseY);
+  renderActiveField(ctx, particles, nodes, cfg, mouseX, mouseY, mouseEnergy);
   renderRipples(ctx);
   renderLightning(ctx, cfg);
   renderDebug(ctx, cfg, fps);

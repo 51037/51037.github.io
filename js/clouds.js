@@ -18,20 +18,31 @@ function updateClouds(dt, cfg) {
   _cOff.y += Math.sin(rad) * spd * dt;
 }
 
-// Nudge each particle's velocity along the local flow angle.
+// Steer each particle toward the local flow angle by ROTATING its velocity,
+// not accelerating along it. Speed (and thus kinetic energy) is preserved
+// exactly, so the field can run forever without pumping energy into the system.
+// `force` becomes a turn rate: the fraction of the angle gap closed per frame.
 function applyFlowField(parts, dt, cfg) {
   const cc = cfg.clouds;
   if (!cc.enabled || cc.force <= 0) return;
   const invScale = 1 / cc.scale;
   const octs     = Math.max(1, cc.octaves | 0);
   const pers     = cc.persistence;
-  const f        = cc.force * (dt / 16.67); // normalise to "per frame at 60fps"
+  const rate     = Math.min(1, cc.force * (dt / 16.67)); // turn fraction per frame
   const TAU      = Math.PI * 2;
 
   for (const p of parts) {
-    const n   = perlin.octave(p.x * invScale + _cOff.x, p.y * invScale + _cOff.y, octs, pers);
-    const ang = n * TAU; // [-1,1] → full rotation
-    p.xvel += Math.cos(ang) * f;
-    p.yvel += Math.sin(ang) * f;
+    const s = Math.hypot(p.xvel, p.yvel);
+    if (s < 1e-6) continue; // no direction to steer
+
+    const n      = perlin.octave(p.x * invScale + _cOff.x, p.y * invScale + _cOff.y, octs, pers);
+    const target = n * TAU;                 // desired heading
+    const cur    = Math.atan2(p.yvel, p.xvel);
+    let   d      = target - cur;
+    d = Math.atan2(Math.sin(d), Math.cos(d)); // shortest signed angular gap
+    const na = cur + d * rate;                // rotate partway toward the flow
+
+    p.xvel = Math.cos(na) * s;                // magnitude unchanged → energy preserved
+    p.yvel = Math.sin(na) * s;
   }
 }

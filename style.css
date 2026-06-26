@@ -28,7 +28,12 @@ body {
   border-right: 1px solid #1a1f35;
   z-index: 100;
   user-select: none;
+  scrollbar-width: none;     /* Firefox */
+  -ms-overflow-style: none;  /* legacy Edge/IE */
 }
+
+/* Hide scrollbar but keep scrolling (WebKit/Blink) */
+#ctrl-panel::-webkit-scrollbar { width: 0; height: 0; display: none; }
 
 .panel-title {
   font-size: 14px;

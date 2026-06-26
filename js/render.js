@@ -37,7 +37,7 @@ function renderPassiveField(ctx, passiveParticles, twinkleFactor) {
   }
 }
 
-function renderActiveField(ctx, particles, nodes, cfg, mouseX, mouseY) {
+function renderActiveField(ctx, particles, nodes, cfg, mouseX, mouseY, mouseEnergy) {
   const maxR    = cfg.connections.maxRadius;
   const maxRN   = cfg.nodes.maxRadius;
   const mouseR2 = (maxRN * 1.5) * (maxRN * 1.5);
@@ -68,12 +68,20 @@ function renderActiveField(ctx, particles, nodes, cfg, mouseX, mouseY) {
     if (near.length < 2) continue;
 
     for (const { p: q, dist } of near) {
-      const render = sourceInNode || dist2(q.x, q.y, mouseX, mouseY) <= mouseR2;
-      if (!render) continue;
+      // Node-zone connections render at full strength; mouse-revealed ones are
+      // scaled by the cursor's movement energy (fade out when the mouse is idle).
+      let mult;
+      if (sourceInNode) {
+        mult = 1;
+      } else if (mouseEnergy > 0.002 && dist2(q.x, q.y, mouseX, mouseY) <= mouseR2) {
+        mult = mouseEnergy;
+      } else {
+        continue;
+      }
 
       // Slightly reduce alpha when two particles differ greatly in depth
       const zMatch    = 1 - Math.abs(p.z - q.z) * 0.4;
-      const connAlpha = (1 - dist / maxR) * cfg.connections.alphaBias * zMatch;
+      const connAlpha = (1 - dist / maxR) * cfg.connections.alphaBias * zMatch * mult;
       ctx.lineWidth   = 0.5 + p.z * 0.75;
 
       if (useGrad) {

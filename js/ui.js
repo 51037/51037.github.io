@@ -44,6 +44,10 @@ const SLIDER_DEFS = [
     { label: 'N Closest',    key: 'nClosest',        min: 1,    max: 12,   step: 1    },
     { label: 'Alpha Bias',   key: 'alphaBias',       min: 0.05, max: 1,    step: 0.05 },
   ]},
+  { section: 'Mouse Reveal', group: 'mouse', rows: [
+    { label: 'Charge/px',   key: 'energyGain',   min: 0,    max: 0.03, step: 0.001 },
+    { label: 'Idle Decay',  key: 'energyDecay',  min: 0,    max: 3,    step: 0.05  },
+  ]},
   { section: 'Nodes', group: 'nodes', enable: true, rows: [
     { label: 'Count',        key: 'count',          min: 0,    max: 25,   step: 1    },
     { label: 'Zone Radius',  key: 'maxRadius',      min: 50,   max: 600,  step: 10   },
@@ -148,6 +152,18 @@ function buildPanel(cfg, onChange, onSave, onReset) {
     </div>
   </div>`;
 
+  const ltc = cfg.lightning.color;
+  html += `<div class="panel-section">
+    <div class="section-label"><span>Lightning Color</span></div>
+    <select id="sel-ltcolor">
+      <option value="match"   ${ltc === 'match'   ? 'selected' : ''}>Match coloring</option>
+      <option value="white"   ${ltc === 'white'   ? 'selected' : ''}>White</option>
+      <option value="palette" ${ltc === 'palette' ? 'selected' : ''}>Palette</option>
+      <option value="rainbow" ${ltc === 'rainbow' ? 'selected' : ''}>Rainbow</option>
+      <option value="mono"    ${ltc === 'mono'    ? 'selected' : ''}>Monochrome (hue)</option>
+    </select>
+  </div>`;
+
   html += `<div class="panel-section">
     <div class="section-label"><span>Options</span></div>
     <label class="chk-row"><input type="checkbox" id="chk-gradient" ${cfg.connections.gradient  ? 'checked' : ''}> Gradient lines</label>
@@ -227,6 +243,11 @@ function buildPanel(cfg, onChange, onSave, onReset) {
 
   panel.querySelector('#sel-palette').addEventListener('change', e => {
     cfg.particles.palette = e.target.value;
+    onChange(cfg);
+  });
+
+  panel.querySelector('#sel-ltcolor').addEventListener('change', e => {
+    cfg.lightning.color = e.target.value;
     onChange(cfg);
   });
 

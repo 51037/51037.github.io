@@ -3,6 +3,8 @@ const DEFAULT_CONFIG = {
   particles:   { count: 250, maxSize: 2.25, maxSpeed: 0.5,  colorMode: 'white', hue: 200, saturation: 40, twinkle: 1.0, palette: 'fire' },
   passive:     { enabled: true, count: 75,  maxSize: 2.0,  maxSpeed: 0.4 },
   connections: { enabled: true, maxRadius: 150, nClosest: 3, alphaBias: 0.4, gradient: true },
+  // Mouse reveal "energy": charges with movement, decays while idle.
+  mouse:       { energyGain: 0.005, energyDecay: 0.5 },
   nodes:       { enabled: true, count: 9,   maxRadius: 300, maxSpeed: 1.0 },
   depth:       { enabled: true, factor: 0.6 },
   physics:     { enabled: true, drag: 0.8 }, // rate (per sec) velocities relax toward baseline energy
@@ -16,6 +18,7 @@ const DEFAULT_CONFIG = {
     branches:   6,     // max nodes a single strike connects to
     intensity:  1.0,   // brightness multiplier
     pull:       2.0,   // gravitational impulse the heavy node imparts to particles
+    color:      'match', // match | white | palette | rainbow | mono
     // ── graphical / shape controls ──
     jaggedness: 0.07,  // perpendicular jitter as a fraction of bolt length
     segments:   7,     // kinks per bolt; more = finer, more erratic
