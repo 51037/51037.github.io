@@ -129,6 +129,13 @@ function _boltRGB(b, pcfg, source) {
   }
 }
 
+function _strokePath(ctx, pts) {
+  ctx.beginPath();
+  ctx.moveTo(pts[0].x, pts[0].y);
+  for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
+  ctx.stroke();
+}
+
 function renderLightning(ctx, cfg) {
   if (bolts.length === 0) return;
   const lc  = cfg.lightning;
@@ -144,15 +151,25 @@ function renderLightning(ctx, cfg) {
     // white so the hue stays dominant while the core still reads as hot.
     const [r, g, bl] = _boltRGB(b, pcfg, lc.color);
     const lift = v => Math.round(v + (255 - v) * 0.2);
-    ctx.strokeStyle = `rgba(${lift(r)},${lift(g)},${lift(bl)},${alpha.toFixed(3)})`;
-    ctx.shadowColor = `rgba(${r},${g},${bl},${alpha.toFixed(3)})`;
-    ctx.shadowBlur  = lc.glow * a;
-    ctx.lineWidth   = lc.width * a + 0.4;
+    const core = `rgba(${lift(r)},${lift(g)},${lift(bl)},`;
+    const halo = `rgba(${r},${g},${bl},`;
+    const w    = lc.width * a + 0.4;
+    const glow = lc.glow * a; // halo width — NOT shadowBlur (crashes WE's Skia layer)
+
     for (const pts of b.segs) {
-      ctx.beginPath();
-      ctx.moveTo(pts[0].x, pts[0].y);
-      for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
-      ctx.stroke();
+      // Approximate glow with wide, faint passes instead of ctx.shadowBlur.
+      if (glow > 0.5) {
+        ctx.strokeStyle = halo + (alpha * 0.18).toFixed(3) + ')';
+        ctx.lineWidth   = w + glow;
+        _strokePath(ctx, pts);
+        ctx.strokeStyle = halo + (alpha * 0.30).toFixed(3) + ')';
+        ctx.lineWidth   = w + glow * 0.5;
+        _strokePath(ctx, pts);
+      }
+      // Hot core
+      ctx.strokeStyle = core + alpha.toFixed(3) + ')';
+      ctx.lineWidth   = w;
+      _strokePath(ctx, pts);
     }
   }
   ctx.restore();
