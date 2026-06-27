@@ -106,17 +106,19 @@ function renderActiveField(ctx, particles, nodes, cfg, mouseX, mouseY, mouseEner
 
 function renderDebug(ctx, cfg, fps) {
   if (!cfg.debug) return;
+  // Offset past the control panel (left, 320px) so the overlay isn't hidden.
+  const x = 330, tx = x + 10;
   ctx.fillStyle = 'rgba(0,0,0,0.65)';
-  ctx.fillRect(8, 8, 240, 118);
+  ctx.fillRect(x, 8, 240, 118);
   ctx.fillStyle = '#0f0';
   ctx.font = '12px monospace';
-  ctx.fillText(`FPS:       ${fps.toFixed(1)}`,              18, 28);
-  ctx.fillText(`Particles: ${particles.length}`,            18, 46);
-  ctx.fillText(`Passive:   ${passiveParticles.length}`,     18, 64);
-  ctx.fillText(`Nodes:     ${nodes.length}`,                18, 82);
-  ctx.fillText(`Depth:     ${cfg.depth.enabled ? 'on  factor='+cfg.depth.factor : 'off'}`, 18, 100);
+  ctx.fillText(`FPS:       ${fps.toFixed(1)}`,              tx, 28);
+  ctx.fillText(`Particles: ${particles.length}`,            tx, 46);
+  ctx.fillText(`Passive:   ${passiveParticles.length}`,     tx, 64);
+  ctx.fillText(`Nodes:     ${nodes.length}`,                tx, 82);
+  ctx.fillText(`Depth:     ${cfg.depth.enabled ? 'on  factor='+cfg.depth.factor : 'off'}`, tx, 100);
   const modeStr = cfg.particles.colorMode === 'palette'
     ? `palette/${cfg.particles.palette}`
     : cfg.particles.colorMode;
-  ctx.fillText(`Mode:      ${modeStr}`,                     18, 118);
+  ctx.fillText(`Mode:      ${modeStr}`,                     tx, 118);
 }
